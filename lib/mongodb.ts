@@ -1,26 +1,20 @@
 import mongoose from 'mongoose'
 
-const MONGODB_URI = process.env.MONGODB_URI!
-
-if (!MONGODB_URI) throw new Error('MONGODB_URI is not defined')
-
 declare global {
   var _mongooseConn: typeof mongoose | null
   var _mongoosePromise: Promise<typeof mongoose> | null
 }
 
-let cached = global._mongooseConn
-let cachedPromise = global._mongoosePromise
-
 export async function connectDB() {
-  if (cached) return cached
+  const MONGODB_URI = process.env.MONGODB_URI
+  if (!MONGODB_URI) throw new Error('MONGODB_URI is not defined')
 
-  if (!cachedPromise) {
-    cachedPromise = mongoose.connect(MONGODB_URI)
+  if (global._mongooseConn) return global._mongooseConn
+
+  if (!global._mongoosePromise) {
+    global._mongoosePromise = mongoose.connect(MONGODB_URI)
   }
 
-  cached = await cachedPromise
-  global._mongooseConn = cached
-  global._mongoosePromise = cachedPromise
-  return cached
+  global._mongooseConn = await global._mongoosePromise
+  return global._mongooseConn
 }
